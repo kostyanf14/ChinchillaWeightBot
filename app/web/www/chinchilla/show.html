@@ -1,0 +1,41 @@
+{% extends 'templates/wrapper.html' %}
+{% block body %}
+<div class="ui container">
+    {% include "templates/menu.html" %}
+    <div class="ui segment">
+        <div class="row">
+            <div class="column">
+                <p>{{ chinchilla_name }}</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="column">
+                <div id="weight_chart" style="width: 800px;height:400px;"></div>
+                <script type="text/javascript">
+                    var weight_chart = echarts.init(document.getElementById('weight_chart'));
+
+                    var option = {
+                        tooltip: {},
+                        xAxis: {
+                            type: 'category',
+                            data: {{ c_times }}
+                        },
+                        yAxis: {
+                            min: 500,
+                            type: 'value'
+                        },
+                        series: [
+                            {
+                                type: 'line',
+                                data: {{ c_weights }}
+                            }
+                        ]
+                    };
+
+                    weight_chart.setOption(option);
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

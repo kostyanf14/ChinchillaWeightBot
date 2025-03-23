@@ -1,0 +1,31 @@
+{% extends 'templates/wrapper.html' %}
+{% block body %}
+<div class="ui container">
+    {% include "templates/menu.html" %}
+    <div class="ui segment">
+        <div class="row">
+            <div class="column">
+                <table class="ui celled striped table">
+                    <thead>
+                        <tr>
+                            <th class="collapsing">#</th>
+                            <th>Назва</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for chinchilla in chinchillas %}
+                        <tr>
+                            <td>{{ chinchilla.id }}</td>
+                            <td>
+                                <a href="/chinchilla/show?chinchilla_id={{ chinchilla.id }}" >
+                                    {{ chinchilla.name }}
+                                </a>
+                            </td>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
