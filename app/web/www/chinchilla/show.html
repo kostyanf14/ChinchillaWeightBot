@@ -21,7 +21,8 @@
                             data: {{ c_times }}
                         },
                         yAxis: {
-                            min: 500,
+                            min: {{ min_weight }},
+                            max: {{ max_weight }},
                             type: 'value'
                         },
                         series: [

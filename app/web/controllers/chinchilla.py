@@ -1,3 +1,4 @@
+from datetime import datetime
 import cherrypy
 
 import app.models
@@ -15,11 +16,6 @@ class Chinchilla():
         chinchillas = app.models.Chinchilla.all()
         params = {'chinchillas': chinchillas}
         return self.index_template.render(params)
-    
-    # t = 1
-    # for w in [619,619,603,610,607, 595,595,598,582,570,605]:
-    #    app.models.Weight(chinchilla_id=1, time = t * 10, weight=w).save()
-    #    t = t + 1
 
     @cherrypy.expose
     @cherrypy.tools.allow(methods=['GET'])
@@ -28,8 +24,18 @@ class Chinchilla():
         chinchilla = app.models.Chinchilla.find(int(chinchilla_id))
         weights = app.models.Weight.all_by_chinchilla(chinchilla.id)
 
-        c_times = list(map(lambda w: w.time, weights))
+        c_times = list(map(lambda w: datetime.fromtimestamp(w.time).strftime("%m-%d"), weights))
         c_weights = list(map(lambda w: w.weight, weights))
+        min_weight = min(c_weights)
+        max_weight = max(c_weights)
+        min_weight -= (max(c_weights) - min(c_weights)) // 2
+        max_weight += (max(c_weights) - min(c_weights)) // 2
 
-        params = {'chinchilla_name': chinchilla.name, 'c_times': c_times, 'c_weights': c_weights}
+        params = {
+            'chinchilla_name': chinchilla.name,
+            'c_times': c_times,
+            'c_weights': c_weights,
+            'min_weight': min_weight,
+            'max_weight': max_weight
+            }
         return self.show_template.render(params)
