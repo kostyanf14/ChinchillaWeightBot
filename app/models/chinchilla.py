@@ -44,8 +44,8 @@ class Chinchilla:
         return [Chinchilla(*values) for values in cursor.fetchall()]
 
     @staticmethod
-    def find(weight_id: int) -> Chinchilla:
-        row = Config.database.execute(f'{FETCH_SQL} WHERE "id" = ?', (weight_id,)).fetchone()
+    def find(chinchilla_id: int) -> Chinchilla:
+        row = Config.database.execute(f'{FETCH_SQL} WHERE "id" = ?', (chinchilla_id,)).fetchone()
         if row is None:
-            raise ValueError(f'Chinchilla with id {weight_id} not found')
+            raise ValueError(f'Chinchilla with id {chinchilla_id} not found')
         return Chinchilla(*row)

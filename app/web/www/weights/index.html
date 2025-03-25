@@ -1,0 +1,55 @@
+{% extends 'templates/wrapper.html' %}
+{% block body %}
+<div class="ui container">
+    {% include "templates/menu.html" %}
+    <div class="ui segment">
+        <div class="ui grid">
+            <div class="row">
+                <div class="eight wide column">
+                    <h2 class="ui header">Правила</h2>
+                </div>
+                <div class="right aligned eight wide column">
+                    <a href="/weights/new" class="ui green button icon">
+                        <i aria-hidden="true" class="calendar plus outline icon"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="column">
+                    <table class="ui celled striped table">
+                        <thead>
+                            <tr>
+                                <th class="collapsing">#</th>
+                                <th>Name</th>
+                                <th>Date</th>
+                                <th>Weight</th>
+                                <th class="collapsing"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for weight in weights %}
+                            <tr>
+                                <td>{{ weight.id }}</td>
+                                <td>{{ weight.get_chinchilla().name }}</td>
+                                <td>{{ weight.get_time_str() }}</td>
+                                <td>{{ weight.weight }}</td>
+                                <td>
+                                    <div class="ui buttons small">
+                                        <a href="/weights/edit?weight_id={{ weight.id }}" class="ui yellow button icon">
+                                            <i aria-hidden="true" class="edit icon"></i>
+                                        </a>
+                                        <a href="/weights/destroy?weight_id={{ weight.id }}" class="ui red button icon">
+                                            <i aria-hidden="true" class="trash alternate outline icon"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

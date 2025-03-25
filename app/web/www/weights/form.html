@@ -1,0 +1,20 @@
+<form class="ui form" method="post" action="{{ '/weights/update?rule_id=' ~ rule.id if rule is defined else '/weights/create' }}">
+    <div class="field">
+        <label>Пристрій</label>
+        <select class="ui fluid dropdown" name="chinchilla_id" required>
+            <option value=""></option>
+            {% for chinchilla in chinchillas %}
+                <option {{ 'selected' if weight is defined and weight.chinchilla_id == chinchilla.id }} value="{{chinchilla.id}}">{{chinchilla.name}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <label>Назва</label>
+        <input type="text" name="time" value="{{weight.time if weight is defined and weight.time}}" required>
+    </div>
+    <div class="field">
+        <label>weight</label>
+        <input type="text" name="weight" value="{{weight.weight if weight is defined and weight.weight}}" required>
+    </div>
+    <button class="ui button" type="submit">Зберегти</button>
+</form>

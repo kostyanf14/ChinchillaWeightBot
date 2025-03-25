@@ -3,7 +3,7 @@ import logging
 import cherrypy
 
 from .chinchilla import Chinchilla
-from .weight import Weight
+from .weights import Weights
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class Root():
     def __init__(self) -> None:
         self.chinchilla = Chinchilla()
-        self.weight = Weight()
+        self.weights = Weights()
         logger.debug("Created app controllers")
 
     @cherrypy.expose

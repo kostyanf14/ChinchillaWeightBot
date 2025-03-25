@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Flag, auto
+from datetime import datetime
 from typing import Any, List, Optional
 
 from app.config import Config
+from . import Chinchilla
 
 TABLE = "weights"
 ATTRIBUTES = ["chinchilla_id", "time", "weight"]
@@ -34,6 +35,16 @@ class Weight:
                 self.id = cursor.lastrowid
             else:
                 db.execute(UPDATE_SQL, attrs + [self.id])
+
+    def get_chinchilla(self) -> Chinchilla | None:
+        if self.chinchilla_id is None:
+            return None
+        return Chinchilla.find(self.chinchilla_id)
+
+    def get_time_str(self) -> str | None:
+        if self.time is None:
+            return None
+        return datetime.fromtimestamp(self.time).strftime("%Y-%m-%d %H:%M:%S")
 
     def destroy(self):
         with Config.database.get_connection() as db:
