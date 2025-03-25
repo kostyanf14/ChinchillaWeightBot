@@ -6,7 +6,6 @@ from typing import Any, List, Optional
 
 from app.config import Config
 
-
 TABLE = "chinchillas"
 ATTRIBUTES = ["name"]
 PREFIXED_ATTRIBUTES = [f'"{TABLE}"."{attr}"' for attr in ATTRIBUTES]

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, List, Optional
 
 from app.config import Config
+
 from . import Chinchilla
 
 TABLE = "weights"
