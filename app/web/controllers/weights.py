@@ -14,14 +14,14 @@ class Weights():
     @cherrypy.tools.allow(methods=['GET'])
     def index(self):
         weights = app.models.Weight.all()
-        params = { 'weights': weights }
+        params = {'weights': weights}
         return self.index_template.render(params)
 
     @cherrypy.expose
     @cherrypy.tools.allow(methods=['GET'])
     def new(self):
         chinchillas = app.models.Chinchilla.all()
-        return self.new_template.render({ 'chinchillas': chinchillas})
+        return self.new_template.render({'chinchillas': chinchillas})
 
     @cherrypy.expose
     @cherrypy.tools.allow(methods=['GET'])
@@ -36,7 +36,7 @@ class Weights():
         rule = app.models.Weight(chinchilla_id=int(chinchilla_id), time=int(time), weight=int(weight))
         rule.save()
         raise cherrypy.HTTPRedirect('/weights')
-    
+
     @cherrypy.expose
     @cherrypy.tools.allow(methods=['GET'])
     def destroy(self, weight_id: str):
