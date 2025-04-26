@@ -6,6 +6,9 @@
         <div class="row">
             <div class="column">
                 <p>{{ chinchilla_name }}</p>
+                <p>Max weight: {{ max_weight }}</p>
+                <p>Min weight: {{ min_weight }}</p>
+                <p>Avg weight: {{ avg_weight }}</p>
             </div>
         </div>
         <div class="row">
@@ -21,8 +24,8 @@
                             data: {{ c_times }}
                         },
                         yAxis: {
-                            min: {{ min_weight }},
-                            max: {{ max_weight }},
+                            min: {{ chart_min_weight }},
+                            max: {{ chart_max_weight }},
                             type: 'value'
                         },
                         series: [

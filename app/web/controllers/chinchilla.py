@@ -25,18 +25,22 @@ class Chinchilla():
         chinchilla = app.models.Chinchilla.find(int(chinchilla_id))
         weights = app.models.Weight.all_by_chinchilla(chinchilla.id)
 
-        c_times = list(map(lambda w: datetime.fromtimestamp(w.time).strftime("%m-%d"), weights))
+        c_times = list(map(lambda w: datetime.fromtimestamp(w.time).strftime("%d-%m"), weights))
         c_weights = list(map(lambda w: w.weight, weights))
         min_weight = min(c_weights)
         max_weight = max(c_weights)
-        min_weight -= (max(c_weights) - min(c_weights)) // 2
-        max_weight += (max(c_weights) - min(c_weights)) // 2
+        avg_weight = sum(c_weights) / len(c_weights)
+        chart_min_weight = min_weight - (max(c_weights) - min(c_weights)) // 3
+        chart_max_weight = max_weight + (max(c_weights) - min(c_weights)) // 3
 
         params = {
             'chinchilla_name': chinchilla.name,
             'c_times': c_times,
             'c_weights': c_weights,
+            'avg_weight': avg_weight,
             'min_weight': min_weight,
-            'max_weight': max_weight
+            'max_weight': max_weight,
+            'chart_min_weight': chart_min_weight,
+            'chart_max_weight': chart_max_weight
             }
         return self.show_template.render(params)
