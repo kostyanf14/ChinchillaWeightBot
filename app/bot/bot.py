@@ -8,7 +8,7 @@ from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
 from app.config import Config
 
 from . import handlers
-from .handlers import StartConversationState
+from .handlers import WeightConversationState
 
 logger = logging.getLogger(__name__)
 
@@ -34,29 +34,29 @@ class Bot(metaclass=SingletonMeta):
 
     def __register_handlers__(self) -> None:
         logger.info("Registering handlers")
+
+        self.application.add_handler(CommandHandler(
+            'start', handlers.sc_start, block=False))
         self.application.add_handler(ConversationHandler(
-            entry_points=[CommandHandler(
-                'start', handlers.sc_start, block=False)],
+            entry_points=[
+                CommandHandler('add_weight', handlers.sc_add_weight, block=False)
+            ],
             states={
-                StartConversationState.LOGIN: [
-                    MessageHandler(
-                        filters.TEXT, handlers.sc_set_login, block=False)
+                WeightConversationState.CHINCHILA: [
+                    CallbackQueryHandler(handlers.sc_select_chinchila, pattern='.*', block=False)
                 ],
-                StartConversationState.CONFIRMATION: [
-                    MessageHandler(
-                        filters.TEXT, handlers.sc_set_confirmation, block=False)
+                WeightConversationState.WEIGHT: [
+                    MessageHandler(filters.TEXT, handlers.sc_enter_weight, block=False)
                 ],
-                StartConversationState.FINISH: [
-                    CallbackQueryHandler(
-                        handlers.sc_save_user, pattern='^save$', block=False),
-                    CallbackQueryHandler(
-                        handlers.sc_reset_user, pattern='^reset$', block=False),
+                WeightConversationState.FINISH: [
+                    CallbackQueryHandler(handlers.sc_save_weight, pattern='^save$', block=False),
+                    CallbackQueryHandler(handlers.sc_reset_weight, pattern='^reset$', block=False),
                 ],
             },
-            fallbacks=[],
+            fallbacks=[
+                CommandHandler("cancel", handlers.sc_reset_weight)
+            ],
         ))
-        self.application.add_handler(CommandHandler(
-            'whoami', handlers.whoami, block=False))
         self.application.add_handler(CommandHandler(
             'help', handlers.help_cmd, block=False))
 
