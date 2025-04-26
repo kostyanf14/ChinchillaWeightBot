@@ -1,16 +1,16 @@
-import base64
 import html
 import json
 import logging
 import traceback
 from enum import Enum, auto, unique
 
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes, ConversationHandler
 
+import app.models
+
 from ..config import Config
-from ..models import User, UserBindDestination
 from . import resources
 
 logger = logging.getLogger(__name__)
@@ -48,137 +48,131 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 @unique
-class StartConversationState(Enum):
-    LOGIN = auto()
-    CONFIRMATION = auto()
+class WeightConversationState(Enum):
+    CHINCHILA = auto()
+    WEIGHT = auto()
     FINISH = auto()
 
 
-async def sc_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> StartConversationState | int:
+async def sc_start(update: Update, _) -> None:
     logger.debug("sc_start %s", update)
+    if update.message is None or update.message.text is None:
+        logger.warning("sc_start with message/text None")
+        return
+
+    await update.message.reply_text(resources.SC_START_TEXT)
+    await update.message.reply_text(resources.HELP_TEXT)
+
+
+async def sc_add_weight(update: Update, _) -> WeightConversationState:
+    logger.debug("sc_add_weight %s", update)
+
+    chinchilas_inlines = []
+    for chinchila in app.models.Chinchilla.all():
+        chinchilas_inlines.append(
+            InlineKeyboardButton(chinchila.name,
+                                 callback_data=f'{resources.SC_ADD_WEIGHT_CHINCHILA_DATA_PREFIX}_{chinchila.id}'
+                                 )
+        )
+
+    sc_select_chinchila_markup = InlineKeyboardMarkup([chinchilas_inlines])
+
+    await update.message.reply_text(resources.SC_ADD_WEIGHT_CHINCHILA_TEXT, reply_markup=sc_select_chinchila_markup)
+    return WeightConversationState.CHINCHILA
+
+
+async def sc_select_chinchila(update: Update, context: ContextTypes.DEFAULT_TYPE) -> WeightConversationState:
+    logger.encoding = "UTF-8"
+    logger.debug("sc_select_chinchila %s", update)
+
+    if update.callback_query is None or update.callback_query.data is None or update.callback_query.message is None:
+        logger.error("sc_select_chinchila with callback_query/data/message None")
+        return WeightConversationState.CHINCHILA
+    assert context.chat_data is not None
+
+    prefix, ch_id = update.callback_query.data.split('_')
+    if prefix != resources.SC_ADD_WEIGHT_CHINCHILA_DATA_PREFIX:
+        logger.error("sc_select_chinchila with wrong callback_query.data")
+        return WeightConversationState.CHINCHILA
+    try:
+        ch = app.models.Chinchilla.find(int(ch_id))
+    except ValueError:
+        logger.error("sc_select_chinchila failed to find chinchilla")
+        return WeightConversationState.CHINCHILA
+
+    context.chat_data['last_ch_id'] = ch.id
+
+    text = resources.SC_ADD_WEIGHT_WEIGHT_TEXT % ch.name
+    await update.callback_query.message.edit_text(text)
+
+    return WeightConversationState.WEIGHT
+
+
+async def sc_enter_weight(update: Update, context: ContextTypes.DEFAULT_TYPE) -> WeightConversationState:
+    logger.debug("sc_enter_weight %s", update)
 
     if update.message is None or update.message.text is None:
-        logger.error("sc_start with message/text None")
-        return StartConversationState.LOGIN
-
-    user = User.try_find_by_telegram(update.message.chat.id)
-    if user is not None:
-        await update.message.reply_text(resources.SC_START_DONE_TEXT % user.name)
-        return ConversationHandler.END
-
-    data = update.message.text.split()
-    if len(data) > 1:
-        login, bind_token = base64.b64decode(data[1]).decode().split()
-        user = User.try_find(login)
-        if user is None:
-            await update.message.reply_text(resources.SC_LOGIN_ERROR_TEXT)
-            await update.message.reply_text(resources.SC_START_OK_TEXT)
-            return StartConversationState.LOGIN
-
-        if user.bind_token != bind_token or user.bind_dest != UserBindDestination.TELEGRAM:
-            if user.bind_dest != UserBindDestination.TELEGRAM:
-                await update.message.reply_text(resources.SC_CONFIRMATION_NTG_ERROR_TEXT)
-            else:
-                await update.message.reply_text(resources.SC_CONFIRMATION_ERROR_TEXT)
-            await update.message.reply_text(resources.SC_START_OK_TEXT)
-            user.bind_token = None
-            user.bind_dest = UserBindDestination.NONE
-            user.save()
-            return StartConversationState.LOGIN
-
-        assert context.chat_data is not None
-        context.chat_data['login'] = login
-        context.chat_data['tg_id'] = update.message.chat.id
-
-        text = resources.SC_FINISH_TEXT % user.name
-        await update.message.reply_text(text, reply_markup=resources.SC_SET_USERNAME_MARKUP)
-        return StartConversationState.FINISH
-
-    await update.message.reply_text(resources.SC_START_OK_TEXT)
-    return StartConversationState.LOGIN
-
-
-async def sc_set_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> StartConversationState:
-    logger.debug("sc_set_login %s", update)
-
-    if update.message is None or update.message.text is None:
-        logger.error("sc_set_login with message/text None")
-        return StartConversationState.LOGIN
-
-    login = update.message.text.strip()
-    user = User.try_find(login)
-    if user is None:
-        await update.message.reply_text(resources.SC_LOGIN_ERROR_TEXT)
-        await update.message.reply_text(resources.SC_START_OK_TEXT)
-        return StartConversationState.LOGIN
-
-    if user.bind_token is None:
-        await update.message.reply_text(resources.SC_CONFIRMATION_NONE_TEXT)
-        await update.message.reply_text(resources.SC_START_OK_TEXT)
-        return StartConversationState.LOGIN
+        logger.error("sc_enter_weight with message/text None")
+        return WeightConversationState.WEIGHT
 
     assert context.chat_data is not None
-    context.chat_data['login'] = login
-    await update.message.reply_text(resources.SC_CONFIRMATION_OK_TEXT)
-    return StartConversationState.CONFIRMATION
+
+    try:
+        weight = int(update.message.text)
+    except ValueError:
+        await update.message.reply_text(resources.SC_ADD_WEIGHT_WEIGHT_ERROR % update.message.text)
+        return WeightConversationState.WEIGHT
+
+    context.chat_data['last_ch_weight'] = weight
+
+    ch = app.models.Chinchilla.find(int(context.chat_data['last_ch_id']))
+
+    text = resources.SC_ADD_WEIGHT_FINISH_TEXT % (ch.name, weight)
+    await update.message.reply_text(text, reply_markup=resources.SC_ADD_WEIGHT_FINISH_MARKUP)
+    return WeightConversationState.FINISH
 
 
-async def sc_set_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> StartConversationState:
-    logger.debug("sc_set_confirmation %s", update)
-
-    if update.message is None or update.message.text is None:
-        logger.error("sc_set_confirmation with message/text None")
-        return StartConversationState.LOGIN
-
-    assert context.chat_data is not None
-    user = User.find(context.chat_data['login'])
-    bind_token = update.message.text.strip()
-
-    if user.bind_token != bind_token:
-        await update.message.reply_text(resources.SC_CONFIRMATION_ERROR_TEXT)
-        await update.message.reply_text(resources.SC_START_OK_TEXT)
-
-        user.bind_token = None
-        user.save()
-
-        return StartConversationState.LOGIN
-
-    user.bind_token = None
-    user.save()
-
-    context.chat_data['tg_id'] = update.message.chat.id
-
-    text = resources.SC_FINISH_TEXT % user.name
-    await update.message.reply_text(text, reply_markup=resources.SC_SET_USERNAME_MARKUP)
-    return StartConversationState.FINISH
-
-
-async def sc_save_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> StartConversationState | int:
-    logger.debug("sc_save_user %s", update)
+async def sc_save_weight(update: Update, context: ContextTypes.DEFAULT_TYPE) -> WeightConversationState | int:
+    logger.debug("sc_save_weight %s", update)
 
     if update.callback_query is None or update.callback_query.message is None:
-        logger.error("sc_save_user with callback_query/message None")
-        return StartConversationState.LOGIN
-
+        logger.error("sc_save_weight with message/text None")
+        return WeightConversationState.FINISH
     assert context.chat_data is not None
-    user = User.find(context.chat_data['login'])
-    user.telegram = context.chat_data['tg_id']
-    user.save()
 
-    await update.callback_query.message.edit_text(resources.SC_SAVE_USER_TEXT)
+    try:
+        db_weight = app.models.Weight()
+        db_weight.chinchilla_id = int(context.chat_data['last_ch_id'])
+        db_weight.weight = int(context.chat_data['last_ch_weight'])
+        db_weight.save()
+    except Exception as ex:
+        logger.error("sc_save_weight failed %s", ex)
+
+        text = resources.SC_ADD_WEIGHT_SAVE_ERROR % (db_weight.get_chinchilla().name, db_weight.weight)
+        await update.callback_query.message.edit_text(text)
+        return ConversationHandler.END
+
+    context.chat_data['last_ch_id'] = None
+    context.chat_data['last_ch_weight'] = None
+
+    text = resources.SC_ADD_WEIGHT_SAVE_OK % (db_weight.get_chinchilla().name, db_weight.weight)
+    await update.callback_query.message.edit_text(text)
     return ConversationHandler.END
 
 
-async def sc_reset_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> StartConversationState:
-    logger.debug("sc_reset_user %s", update)
+async def sc_reset_weight(update: Update, context: ContextTypes.DEFAULT_TYPE) -> WeightConversationState | int:
+    logger.debug("sc_reset_weight %s", update)
 
-    if context.chat_data is not None:
-        context.chat_data.clear()
+    if update.callback_query is None or update.callback_query.message is None:
+        logger.error("sc_reset_weight with callback_query/message None")
+        return WeightConversationState.FINISH
+    assert context.chat_data is not None
 
-    if update.callback_query is not None and update.callback_query.message is not None:
-        await update.callback_query.message.edit_text(resources.SC_START_OK_TEXT)
+    context.chat_data['last_ch_id'] = None
+    context.chat_data['last_ch_weight'] = None
 
-    return StartConversationState.LOGIN
+    await update.callback_query.message.edit_text(resources.SC_ADD_WEIGHT_RESET)
+    return ConversationHandler.END
 
 
 async def help_cmd(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -189,17 +183,3 @@ async def help_cmd(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     await update.message.reply_text(resources.HELP_TEXT)
-
-
-async def whoami(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.debug("whoami %s", update)
-
-    if update.message is None:
-        logger.error("whoami with message None")
-        return
-
-    user = User.try_find_by_telegram(update.message.chat_id)
-    if user is None:
-        await update.message.reply_text(resources.WHOAMI_NONE_TEXT)
-    else:
-        await update.message.reply_text(resources.WHOAMI_USER_TEXT % (user.login, user.name))

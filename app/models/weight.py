@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, List, Optional
@@ -30,6 +31,8 @@ class Weight:
 
     def save(self):
         with Config.database.get_connection() as db:
+            if self.time is None:
+                self.time = int(time.time())
             attrs = [self.__attribute_before_type_cast(attr) for attr in ATTRIBUTES]
             if self.id is None:
                 cursor = db.execute(INSERT_SQL, attrs)
