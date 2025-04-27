@@ -15,6 +15,9 @@ PREFIXED_ATTRIBUTES = [f'"{TABLE}"."{attr}"' for attr in ATTRIBUTES]
 INSERT_SQL = f'INSERT INTO "{TABLE}" ({",".join(ATTRIBUTES)}) VALUES ({",".join(["?"] * len(ATTRIBUTES))})'
 UPDATE_SQL = f'UPDATE "{TABLE}" SET {",".join([f"{attr} = ?" for attr in ATTRIBUTES])} WHERE "id" = ?'
 FETCH_SQL = f'SELECT "{TABLE}"."id", {",".join(PREFIXED_ATTRIBUTES)} FROM "{TABLE}"'
+# SQLite magic)) fail on PostgreSQL
+FETCH_LAST_WEIGHTS = f'SELECT "id", "chinchilla_id", max("time"), "weight" \
+    FROM "{TABLE}" GROUP BY "chinchilla_id"'
 DEFAULT_ORDER = f'ORDER BY "{TABLE}"."time" ASC'
 FETCH_SQL_DEFAULT_ORDER = f'{FETCH_SQL} {DEFAULT_ORDER}'
 
@@ -64,6 +67,11 @@ class Weight:
         cursor = Config.database.execute(
             f'{FETCH_SQL} WHERE "chinchilla_id" = ? {DEFAULT_ORDER}',
             (chinchilla_id,))
+        return [Weight(*values) for values in cursor.fetchall()]
+
+    @staticmethod
+    def last_weights_of_chinchillas() -> List[Weight]:
+        cursor = Config.database.execute(FETCH_LAST_WEIGHTS)
         return [Weight(*values) for values in cursor.fetchall()]
 
     @staticmethod

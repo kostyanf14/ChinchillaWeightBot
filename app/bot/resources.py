@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-SC_START_TEXT = "Hi!"
+START_TEXT = "Hi!"
 
 SC_ADD_WEIGHT_CHINCHILA_TEXT = "Select chinchila"
 
@@ -19,14 +19,19 @@ SC_ADD_WEIGHT_FINISH_MARKUP = InlineKeyboardMarkup([[
     InlineKeyboardButton('Reset', callback_data='reset'),
 ]])
 
-SC_ADD_WEIGHT_SAVE_OK = "[OK]: Chinchila %s, weight: %s saved"
+SC_ADD_WEIGHT_SAVE_OK = '''[OK]: Chinchila %s, weight: %s saved
+Previous weight %s date %s
+'''
 
-SC_ADD_WEIGHT_SAVE_ERROR = "[FAILED}: Chinchila %s, weight: %s not saved"
+SC_ADD_WEIGHT_SAVE_ERROR = "[FAILED]: Chinchila %s, weight: %s not saved"
 
 SC_ADD_WEIGHT_RESET = "Ok, forget everything"
 
+SC_LAST_WEIGHT_LINE = "[%s] Chinchila %s, weight: %s"
+
 HELP_TEXT = '''
 /add_weight - add chinchila weight
+/get_last_weights - get last weights of each chinchilla
 /cancel - cancel current action
 /help - get this text
 '''

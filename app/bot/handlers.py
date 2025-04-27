@@ -54,13 +54,13 @@ class WeightConversationState(Enum):
     FINISH = auto()
 
 
-async def sc_start(update: Update, _) -> None:
-    logger.debug("sc_start %s", update)
+async def start_cmd(update: Update, _) -> None:
+    logger.debug("start_cmd %s", update)
     if update.message is None or update.message.text is None:
-        logger.warning("sc_start with message/text None")
+        logger.warning("start_cmd with message/text None")
         return
 
-    await update.message.reply_text(resources.SC_START_TEXT)
+    await update.message.reply_text(resources.START_TEXT)
     await update.message.reply_text(resources.HELP_TEXT)
 
 
@@ -140,6 +140,8 @@ async def sc_save_weight(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return WeightConversationState.FINISH
     assert context.chat_data is not None
 
+    last_weight = app.models.Weight.all_by_chinchilla(int(context.chat_data['last_ch_id']))[-1]
+
     try:
         db_weight = app.models.Weight()
         db_weight.chinchilla_id = int(context.chat_data['last_ch_id'])
@@ -155,9 +157,27 @@ async def sc_save_weight(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     context.chat_data['last_ch_id'] = None
     context.chat_data['last_ch_weight'] = None
 
-    text = resources.SC_ADD_WEIGHT_SAVE_OK % (db_weight.get_chinchilla().name, db_weight.weight)
+    text = resources.SC_ADD_WEIGHT_SAVE_OK % (
+        db_weight.get_chinchilla().name, db_weight.weight,
+        last_weight.weight, last_weight.get_time_str()
+    )
     await update.callback_query.message.edit_text(text)
     return ConversationHandler.END
+
+
+async def get_last_weights_cmd(update: Update, _) -> None:
+    logger.debug("get_last_weights_cmd %s", update)
+
+    if update.message is None or update.message.text is None:
+        logger.error("get_last_weights_cmd with message/text None")
+        return
+
+    weights = app.models.Weight.last_weights_of_chinchillas()
+    text = ""
+    for weight in weights:
+        text += resources.SC_LAST_WEIGHT_LINE % (weight.get_time_str(), weight.get_chinchilla().name, weight.weight)
+        text += "\n"
+    await update.message.reply_text(text)
 
 
 async def sc_reset_weight(update: Update, context: ContextTypes.DEFAULT_TYPE) -> WeightConversationState | int:
