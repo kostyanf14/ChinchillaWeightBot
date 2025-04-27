@@ -36,7 +36,7 @@ class Bot(metaclass=SingletonMeta):
         logger.info("Registering handlers")
 
         self.application.add_handler(CommandHandler(
-            'start', handlers.sc_start, block=False))
+            'start', handlers.start_cmd, block=False))
         self.application.add_handler(ConversationHandler(
             entry_points=[
                 CommandHandler('add_weight', handlers.sc_add_weight, block=False)
@@ -57,8 +57,8 @@ class Bot(metaclass=SingletonMeta):
                 CommandHandler("cancel", handlers.sc_reset_weight)
             ],
         ))
-        self.application.add_handler(CommandHandler(
-            'help', handlers.help_cmd, block=False))
+        self.application.add_handler(CommandHandler('help', handlers.help_cmd, block=False))
+        self.application.add_handler(CommandHandler('get_last_weights', handlers.get_last_weights_cmd, block=False))
 
         logger.debug("Registering error handlers")
         self.application.add_error_handler(handlers.error_handler)

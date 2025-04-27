@@ -29,7 +29,7 @@ class Chinchilla():
         c_weights = list(map(lambda w: w.weight, weights))
         min_weight = min(c_weights)
         max_weight = max(c_weights)
-        avg_weight = sum(c_weights) / len(c_weights)
+        avg_weight = sum(c_weights) // len(c_weights)
         chart_min_weight = min_weight - (max(c_weights) - min(c_weights)) // 3
         chart_max_weight = max_weight + (max(c_weights) - min(c_weights)) // 3
 
