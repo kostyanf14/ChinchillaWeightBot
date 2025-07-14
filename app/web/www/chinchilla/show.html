@@ -3,42 +3,79 @@
 <div class="ui container">
     {% include "templates/menu.html" %}
     <div class="ui segment">
-        <div class="row">
-            <div class="column">
-                <p>{{ chinchilla_name }}</p>
-                <p>Max weight: {{ max_weight }}</p>
-                <p>Min weight: {{ min_weight }}</p>
-                <p>Avg weight: {{ avg_weight }}</p>
+        <div class="ui horizontal segments">
+            <div class="ui segment">
+                <h2>{{ chinchilla_name }}</h2>
+                <p>Max weight: <span id="max_weight">{{ max_weight }}</span></p>
+                <p>Min weight: <span id="min_weight">{{ min_weight }}</span></p>
+                <p>Avg weight: <span id="avg_weight">{{ avg_weight }}</span></p>
+            </div>
+            <div class="ui segment">
+                <button class="ui button" onclick="toggleLast30()">Toggle Last 30 records</button>
+                <div id="info_label" class="ui blue pointing label" style="display: none; margin-top: 10px;">
+                    Only last 30 weight records are shown
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="column">
-                <div id="weight_chart" style="height:400px;"></div>
-                <script type="text/javascript">
-                    var weight_chart = echarts.init(document.getElementById('weight_chart'));
+        <div class="ui segment">
+            <div id="weight_chart" style="height:400px;"></div>
+            <script type="text/javascript">
+                const allTimes = {{ c_times | tojson }};
+                const allWeights = {{ c_weights | tojson }};
+                const minChartWeight = {{ chart_min_weight }};
+                const maxChartWeight = {{ chart_max_weight }};
 
-                    var option = {
+                const chart = echarts.init(document.getElementById('weight_chart'));
+                let showingAll = true;
+
+                function renderStats(weights) {
+                    const max = Math.max(...weights);
+                    const min = Math.min(...weights);
+                    const avg = Math.floor(weights.reduce((a, b) => a + b, 0) / weights.length);
+
+                    document.getElementById("max_weight").textContent = max;
+                    document.getElementById("min_weight").textContent = min;
+                    document.getElementById("avg_weight").textContent = avg;
+                }
+
+                function renderChart(times, weights) {
+                    chart.setOption({
                         tooltip: {},
                         xAxis: {
                             type: 'category',
-                            data: {{ c_times }}
+                            data: times
                         },
                         yAxis: {
-                            min: {{ chart_min_weight }},
-                            max: {{ chart_max_weight }},
-                            type: 'value'
+                            type: 'value',
+                            min: minChartWeight,
+                            max: maxChartWeight
                         },
-                        series: [
-                            {
-                                type: 'line',
-                                data: {{ c_weights }}
-                            }
-                        ]
-                    };
+                        series: [{
+                            type: 'line',
+                            data: weights
+                        }]
+                    });
+                    renderStats(weights);
+                }
 
-                    weight_chart.setOption(option);
-                </script>
-            </div>
+                function toggleLast30() {
+                    const infoLabel = document.getElementById("info_label");
+
+                    if (showingAll) {
+                        const last30Times = allTimes.slice(-30);
+                        const last30Weights = allWeights.slice(-30);
+                        renderChart(last30Times, last30Weights);
+                        infoLabel.style.display = "inline-block";
+                    } else {
+                        renderChart(allTimes, allWeights);
+                        infoLabel.style.display = "none";
+                    }
+                    showingAll = !showingAll;
+                }
+
+                // Initial render
+                renderChart(allTimes, allWeights);
+            </script>
         </div>
     </div>
 </div>
